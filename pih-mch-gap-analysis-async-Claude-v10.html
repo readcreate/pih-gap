@@ -378,7 +378,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
           <select class="form-select" id="site-country" onchange="toggleOther('site-country','country-other')">
             <option value="">Select country...</option>
             <option>Haiti</option>
-            <option>Kazakhstan</option>
             <option>Lesotho</option>
             <option>Liberia</option>
             <option>Malawi</option>
@@ -394,11 +393,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
         </div>
         <div class="form-group">
           <label class="form-label">Site Name <span class="required">*</span></label>
-          <input class="form-input" id="site-name" placeholder="e.g., Butaro District Hospital" />
+          <input class="form-input" id="site-name" placeholder="e.g., Zanmi Lasante" />
         </div>
       </div>
 
       <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Facility Name <span class="required">*</span></label>
+          <input class="form-input" id="facility-name" placeholder="e.g., Butaro District Hospital" />
+        </div>
         <div class="form-group">
           <label class="form-label">Your Role <span class="required">*</span></label>
           <select class="form-select" id="user-role" onchange="toggleOther('user-role','role-other')">
@@ -412,13 +415,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
             <option>Data / M&amp;E Officer</option>
             <option>Site Director / Country Director</option>
             <option>Physician / Medical Officer</option>
-            <option>HQ / Global Programs Staff</option>
+            <option>Coordination Site Staff</option>
             <option>Other</option>
           </select>
           <div class="other-wrap" id="role-other">
             <input class="form-input" id="role-other-input" placeholder="Please specify role..." />
           </div>
         </div>
+      </div>
+
+      <div class="form-row">
         <div class="form-group">
           <label class="form-label">Facility Level</label>
           <select class="form-select" id="facility-level" onchange="toggleOther('facility-level','level-other')">
@@ -481,7 +487,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
 
     <div class="btn-row">
       <button class="btn btn-secondary" onclick="goTo('consent')">← Back</button>
-      <button class="btn btn-primary" onclick="goTo('planning')">Continue to Planning →</button>
+      <button class="btn btn-primary" onclick="proceedFromSite()">Continue to Planning →</button>
     </div>
   </div>
 </div>
@@ -531,7 +537,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
         <div class="oe-section-icon" style="background:rgba(26,58,42,0.1);color:var(--forest);">🗓️</div>
         <div><div class="oe-section-title">Timing &amp; Cadence</div><div class="oe-section-subtitle">When and how often should the gap analysis meeting happen?</div></div>
       </div>
-      <p class="oe-prompt">What would be the ideal timing for conducting the full gap analysis meeting at your site? Consider: weekly, bi-weekly, monthly, bi-monthly, something else. Add other thoughts related to timing and cadence.</p>
+      <p class="oe-prompt">What would be the ideal timing for conducting the gap analysis meeting at your site? Consider: weekly, bi-weekly, monthly, bi-monthly, something else. Add other thoughts related to timing and cadence.</p>
       <div class="oe-input-row">
         <input class="form-input" id="plan-timing-input" placeholder="Type your response and click Add..." />
         <button class="oe-add-btn" onclick="addPlanItem('timing')">+ Add</button>
@@ -546,13 +552,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,san
         <div class="oe-section-icon" style="background:rgba(74,158,200,0.1);color:var(--sky);">📊</div>
         <div><div class="oe-section-title">Data Sources</div><div class="oe-section-subtitle">What data should feed the analysis?</div></div>
       </div>
-      <p class="oe-prompt">What data sources exist at your site that should inform the gap analysis? What data is missing that you wish you had?</p>
+      <p class="oe-prompt">What data sources already exist at your site that should inform the gap analysis?</p>
       <div class="oe-input-row">
         <input class="form-input" id="plan-data-input" placeholder="Type your response and click Add..." />
         <button class="oe-add-btn" onclick="addPlanItem('data')">+ Add</button>
       </div>
       <div class="oe-items-list" id="plan-data-list"></div>
       <div class="oe-count" id="plan-data-count"></div>
+      <hr class="oe-divider">
+      <p class="oe-prompt">What data is missing that you wish you had?</p>
+      <div class="oe-input-row">
+        <input class="form-input" id="plan-data2-input" placeholder="Type your response and click Add..." />
+        <button class="oe-add-btn" onclick="addPlanItem('data2')">+ Add</button>
+      </div>
+      <div class="oe-items-list" id="plan-data2-list"></div>
+      <div class="oe-count" id="plan-data2-count"></div>
     </div>
 
     <!-- Barriers -->
@@ -633,7 +647,7 @@ var state = {
   currentScreen: 'landing',
   consentName: '', consentEmail: '', consentResearch: '',
   openEndedResponses: { Staff: [], Stuff: [], Space: [], Systems: [], Social: [] },
-  planningResponses: { ownership: [], ownership2: [], timing: [], data: [], barriers: [], enablers: [], other: [] }
+  planningResponses: { ownership: [], ownership2: [], timing: [], data: [], data2: [], barriers: [], enablers: [], other: [] }
 };
 
 var screenOrder = ['landing','concepts','consent','site','planning','thanks'];
@@ -739,6 +753,27 @@ function proceedFromConsent() {
   goTo('site');
 }
 
+// ===== SITE PAGE VALIDATION =====
+function proceedFromSite() {
+  var country = document.getElementById('site-country') ? document.getElementById('site-country').value : '';
+  if (!country) { showToast('Please select a country'); return; }
+  if (country === 'Other') {
+    var co = document.getElementById('country-other-input');
+    if (!co || !co.value.trim()) { showToast('Please specify your country'); return; }
+  }
+  var site = document.getElementById('site-name') ? document.getElementById('site-name').value.trim() : '';
+  if (!site) { showToast('Please enter your site name'); return; }
+  var facility = document.getElementById('facility-name') ? document.getElementById('facility-name').value.trim() : '';
+  if (!facility) { showToast('Please enter your facility name'); return; }
+  var role = document.getElementById('user-role') ? document.getElementById('user-role').value : '';
+  if (!role) { showToast('Please select your role'); return; }
+  if (role === 'Other') {
+    var ro = document.getElementById('role-other-input');
+    if (!ro || !ro.value.trim()) { showToast('Please specify your role'); return; }
+  }
+  goTo('planning');
+}
+
 // ===== OTHER DROPDOWNS =====
 function toggleOther(selectId, wrapId) {
   var sel = document.getElementById(selectId);
@@ -838,7 +873,7 @@ function renderPlanList(cat) {
 }
 
 // ===== SUBMIT =====
-var SHEET_URL = 'https://script.google.com/macros/s/AKfycbw1ZlRFMZkgFVGfWgb6qLTvy24PYBQNPwffGv8eHKnp3JULE94EwJb1FqFL7wHPOp9ClA/exec';
+var SHEET_URL = 'https://script.google.com/macros/s/AKfycbxshBhF__5nMB0xC-sfaYST7bTFuoVIKkB62Nibg5g24HfYFPlFOPrb-gBVXt7dX7i-vA/exec';
 
 function submitSurvey() {
   flushUnsubmittedInputs();
@@ -853,6 +888,8 @@ function submitSurvey() {
   if (!country) { showToast('Please select a country before submitting'); return; }
   if (!site) { showToast('Please enter your site name before submitting'); return; }
   if (!role) { showToast('Please select your role before submitting'); return; }
+  var facilityName = document.getElementById('facility-name') ? document.getElementById('facility-name').value.trim() : '';
+  if (!facilityName) { showToast('Please enter your facility name before submitting'); return; }
 
   var payload = {
     timestamp: new Date().toISOString(),
@@ -861,6 +898,7 @@ function submitSurvey() {
     consent_research: state.consentResearch,
     country: country,
     site_name: site,
+    facility_name: document.getElementById('facility-name') ? document.getElementById('facility-name').value.trim() : '',
     role: role,
     facility_level: facilityLevel,
     facility_designation: designation,
@@ -875,6 +913,7 @@ function submitSurvey() {
     plan_ownership2: state.planningResponses.ownership2.join(' | '),
     plan_timing:     state.planningResponses.timing.join(' | '),
     plan_data:       state.planningResponses.data.join(' | '),
+    plan_data2:      state.planningResponses.data2.join(' | '),
     plan_barriers:   state.planningResponses.barriers.join(' | '),
     plan_enablers:   state.planningResponses.enablers.join(' | '),
     plan_other:      state.planningResponses.other.join(' | ')
@@ -934,6 +973,8 @@ function renderThanksSummary() {
   var setting = document.getElementById('setting') ? document.getElementById('setting').value : '';
   lines.push('Country: ' + (country || '—'));
   lines.push('Site: ' + (site || '—'));
+  var facilityName2 = document.getElementById('facility-name') ? document.getElementById('facility-name').value.trim() : '';
+  lines.push('Facility: ' + (facilityName2 || '—'));
   lines.push('Role: ' + (role || '—'));
   lines.push('Facility Level: ' + (level || '—'));
   lines.push('Facility Designation: ' + (desig || '—'));
@@ -979,7 +1020,7 @@ function copyResponses() {
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', function() {
-  ['ownership','ownership2','timing','data','barriers','enablers','other'].forEach(function(cat){
+  ['ownership','ownership2','timing','data','data2','barriers','enablers','other'].forEach(function(cat){
     var inp = document.getElementById('plan-' + cat + '-input');
     if (inp) inp.addEventListener('keydown', function(e){ if(e.key==='Enter') addPlanItem(cat); });
   });
