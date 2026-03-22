@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCH Gap Analysis | PIH Cross-Site Initiative</title>
+<style>
+:root {
+  --forest: #1a3a2a; --forest-mid: #2d5a3d; --forest-light: #3d7a52;
+  --gold: #e8a838; --gold-light: #f5c96a; --terra: #c85a2a;
+  --cream: #faf6ef; --cream-mid: #f0e8d8; --sky: #4a9ec8;
+  --text-dark: #1a1f2a; --text-mid: #4a5568; --text-light: #8a9ab0;
+  --white: #ffffff;
+  --shadow: 0 4px 24px rgba(26,58,42,0.12);
+  --shadow-lg: 0 12px 48px rgba(26,58,42,0.18);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--cream);color:var(--text-dark);min-height:100vh;overflow-x:hidden;}
+
+/* SCREEN */
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;flex-direction:column;}
+
+/* PROGRESS */
+#progress-bar{position:fixed;top:0;left:0;right:0;z-index:1000;height:4px;background:rgba(26,58,42,0.1);}
+#progress-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--terra));transition:width 0.5s ease;width:0%;}
+#nav-header{position:fixed;top:4px;left:0;right:0;z-index:999;display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:rgba(250,246,239,0.92);backdrop-filter:blur(8px);border-bottom:1px solid rgba(26,58,42,0.08);transform:translateY(-60px);transition:transform 0.3s ease;}
+#nav-header.visible{transform:translateY(0);}
+.nav-logo{font-family:Georgia,serif;font-size:15px;color:var(--forest);font-weight:700;}
+.nav-dots{display:flex;gap:6px;}
+.nav-dot{width:8px;height:8px;border-radius:50%;background:var(--cream-mid);border:2px solid var(--text-light);transition:all 0.3s;}
+.nav-dot.done{background:var(--forest);border-color:var(--forest);}
+.nav-dot.active{background:var(--gold);border-color:var(--gold);transform:scale(1.3);}
+.nav-step{font-family:monospace;font-size:12px;color:var(--text-light);}
+
+/* LANDING */
+#screen-landing{background:var(--forest);position:relative;overflow:hidden;align-items:center;justify-content:center;}
+.landing-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 80%,rgba(61,122,82,0.4) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 20%,rgba(232,168,56,0.15) 0%,transparent 50%);}
+.africa-pattern{position:absolute;inset:0;opacity:0.04;background-image:repeating-linear-gradient(45deg,var(--gold) 0,var(--gold) 1px,transparent 0,transparent 50%);background-size:20px 20px;}
+.landing-content{position:relative;z-index:2;text-align:center;padding:40px 24px;max-width:800px;animation:fadeUp 0.8s ease both;display:flex;flex-direction:column;align-items:center;}
+.landing-initiative{font-family:monospace;font-size:13px;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold-light);margin-bottom:20px;}
+.landing-title{font-family:Georgia,serif;font-size:clamp(40px,8vw,80px);line-height:1.0;color:var(--white);margin-bottom:12px;font-weight:900;}
+.landing-title span{color:var(--gold);}
+.landing-subtitle{font-size:clamp(15px,2.5vw,19px);color:rgba(255,255,255,0.65);font-weight:300;line-height:1.6;margin-bottom:16px;max-width:520px;}
+.landing-deadline{background:rgba(232,168,56,0.15);border:1px solid rgba(232,168,56,0.35);color:var(--gold-light);padding:10px 20px;border-radius:100px;font-size:13px;font-weight:600;margin-bottom:36px;}
+.landing-cta{display:inline-flex;align-items:center;gap:12px;background:var(--gold);color:var(--forest);padding:18px 52px;border-radius:60px;border:none;font-size:18px;font-weight:700;cursor:pointer;transition:all 0.3s;box-shadow:0 8px 32px rgba(232,168,56,0.35);font-family:inherit;}
+.landing-cta:hover{background:var(--gold-light);transform:translateY(-2px);}
+.landing-footer{position:absolute;bottom:24px;left:0;right:0;text-align:center;font-size:12px;color:rgba(255,255,255,0.3);letter-spacing:0.08em;text-transform:uppercase;font-family:monospace;}
+
+/* SHARED */
+.screen-inner{max-width:900px;margin:0 auto;padding:80px 24px 48px;width:100%;}
+.screen-header{margin-bottom:40px;}
+.step-label{display:inline-flex;align-items:center;gap:8px;font-family:monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:var(--forest-light);margin-bottom:16px;}
+.step-number{width:22px;height:22px;border-radius:50%;background:var(--forest);color:var(--cream);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;}
+.screen-title{font-family:Georgia,serif;font-size:clamp(26px,5vw,44px);line-height:1.1;color:var(--forest);margin-bottom:14px;}
+.screen-desc{font-size:16px;color:var(--text-mid);line-height:1.7;max-width:640px;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:10px;padding:14px 32px;border-radius:50px;border:none;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.25s;font-family:inherit;}
+.btn-primary{background:var(--forest);color:var(--white);}
+.btn-primary:hover{background:var(--forest-mid);transform:translateY(-1px);box-shadow:var(--shadow);}
+.btn-secondary{background:transparent;color:var(--forest);border:2px solid var(--forest);}
+.btn-secondary:hover{background:var(--forest);color:var(--white);}
+.btn-gold{background:var(--gold);color:var(--forest);}
+.btn-gold:hover{background:var(--gold-light);transform:translateY(-1px);}
+.btn-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:40px;}
+
+/* CARD */
+.card{background:var(--white);border-radius:16px;padding:28px;box-shadow:var(--shadow);border:1px solid rgba(26,58,42,0.06);}
+
+/* FORMS */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:4px;}
+.form-group{margin-bottom:18px;}
+.form-label{display:block;font-size:13px;font-weight:600;color:var(--forest);margin-bottom:8px;}
+.form-label .required{color:var(--terra);margin-left:3px;}
+.form-input,.form-select,.form-textarea{width:100%;padding:12px 16px;border-radius:10px;border:2px solid var(--cream-mid);background:var(--white);font-size:15px;color:var(--text-dark);transition:border-color 0.2s;outline:none;font-family:inherit;appearance:none;}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--forest-light);box-shadow:0 0 0 3px rgba(61,122,82,0.12);}
+.form-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a5568' stroke-width='2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+.form-textarea{min-height:72px;resize:vertical;}
+.other-wrap{display:none;margin-top:8px;}
+.other-wrap.visible{display:block;}
+
+/* CONSENT */
+#screen-consent{background:var(--cream);}
+.consent-box{background:var(--white);border-radius:16px;padding:32px;border:2px solid var(--cream-mid);margin-bottom:20px;}
+.consent-box h3{font-family:Georgia,serif;font-size:20px;color:var(--forest);margin-bottom:16px;}
+.consent-anon{background:rgba(26,58,42,0.06);border-left:4px solid var(--forest-light);border-radius:0 10px 10px 0;padding:14px 18px;font-size:14px;color:var(--text-mid);line-height:1.6;margin-bottom:18px;}
+.consent-anon strong{color:var(--forest);}
+.consent-question{font-size:14px;color:var(--text-mid);margin-bottom:14px;line-height:1.6;}
+.radio-group{display:flex;flex-direction:column;gap:10px;}
+.radio-option{display:flex;align-items:flex-start;gap:12px;padding:14px 18px;border-radius:12px;border:2px solid var(--cream-mid);cursor:pointer;transition:all 0.2s;}
+.radio-option:hover{border-color:var(--forest-light);}
+.radio-option.selected{border-color:var(--forest);background:rgba(26,58,42,0.04);}
+.radio-option input[type="radio"]{margin-top:3px;flex-shrink:0;accent-color:var(--forest);width:16px;height:16px;cursor:pointer;}
+.radio-label{font-size:14px;color:var(--text-dark);line-height:1.5;}
+
+/* CONCEPT TABS */
+.concept-tabs{display:flex;gap:0;border:2px solid var(--forest);border-radius:12px;overflow:hidden;margin-bottom:32px;}
+.concept-tab{flex:1;padding:12px 16px;background:transparent;border:none;font-size:14px;font-weight:500;color:var(--forest);cursor:pointer;transition:all 0.2s;text-align:center;border-right:2px solid var(--forest);font-family:inherit;}
+.concept-tab:last-child{border-right:none;}
+.concept-tab.active{background:var(--forest);color:var(--white);}
+.concept-panel{display:none;animation:fadeIn 0.3s ease;}
+.concept-panel.active{display:block;}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.compare-card{border-radius:12px;padding:24px;}
+.compare-card.landscape{background:linear-gradient(135deg,#e8f4e8,#d4ecd4);border:2px solid #a8d4a8;}
+.compare-card.gap-card{background:linear-gradient(135deg,#fff3e0,#ffe0b2);border:2px solid #ffb74d;}
+.compare-card h3{font-family:Georgia,serif;font-size:20px;margin-bottom:10px;}
+.compare-card.landscape h3{color:var(--forest);}
+.compare-card.gap-card h3{color:#e65100;}
+.compare-card p{font-size:14px;color:var(--text-mid);line-height:1.6;}
+.badge{display:inline-block;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:600;margin-bottom:12px;}
+.compare-card.landscape .badge{background:#a8d4a8;color:var(--forest);}
+.compare-card.gap-card .badge{background:#ffb74d;color:#7c3700;}
+.five-s-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:24px 0;}
+.s-card{border-radius:14px;padding:20px 16px;text-align:center;cursor:pointer;transition:all 0.3s;}
+.s-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);}
+.s-card .s-icon{font-size:32px;margin-bottom:10px;display:block;}
+.s-card .s-name{font-family:Georgia,serif;font-size:18px;font-weight:700;margin-bottom:6px;}
+.s-card .s-desc{font-size:12px;line-height:1.5;opacity:0.85;}
+.s-card[data-s="Staff"]{background:linear-gradient(135deg,#1a3a2a,#2d5a3d);color:white;}
+.s-card[data-s="Stuff"]{background:linear-gradient(135deg,#c85a2a,#e87d52);color:white;}
+.s-card[data-s="Space"]{background:linear-gradient(135deg,#4a9ec8,#7abfde);color:white;}
+.s-card[data-s="Systems"]{background:linear-gradient(135deg,#7c3d8a,#a06ab4);color:white;}
+.s-card[data-s="Social"]{background:linear-gradient(135deg,#b8860b,#e8a838);color:white;}
+.s-detail{background:var(--white);border-radius:16px;padding:24px;border:2px solid var(--cream-mid);margin-top:16px;display:none;animation:fadeUp 0.3s ease;}
+.s-detail.active{display:block;}
+.s-detail h4{font-family:Georgia,serif;font-size:20px;margin-bottom:8px;color:var(--forest);}
+.s-detail p{font-size:14px;color:var(--text-mid);line-height:1.7;margin-bottom:12px;}
+.s-examples{display:flex;flex-wrap:wrap;gap:8px;}
+.s-example-tag{background:var(--cream-mid);color:var(--forest);padding:6px 14px;border-radius:100px;font-size:12px;font-weight:500;}
+.priority-matrix{border-radius:16px;overflow:hidden;border:2px solid var(--cream-mid);margin:16px 0;}
+.matrix-grid{display:grid;grid-template-columns:auto 1fr 1fr;grid-template-rows:auto 1fr 1fr;}
+.matrix-label{display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;padding:10px;color:var(--text-mid);text-align:center;}
+.matrix-cell{border:1px solid rgba(0,0,0,0.08);padding:18px 14px;text-align:center;min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.matrix-cell h5{font-size:13px;font-weight:700;margin-bottom:4px;}
+.matrix-cell p{font-size:11px;color:var(--text-mid);line-height:1.4;}
+.cell-hi-hi{background:#ffebee;} .cell-hi-hi h5{color:#c62828;}
+.cell-hi-lo{background:#fff3e0;} .cell-hi-lo h5{color:#e65100;}
+.cell-lo-hi{background:#e8f5e9;} .cell-lo-hi h5{color:#2e7d32;}
+.cell-lo-lo{background:#f5f5f5;} .cell-lo-lo h5{color:#757575;}
+.matrix-axis-y{display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;text-orientation:mixed;transform:rotate(180deg);font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--forest);padding:12px 8px;background:var(--cream-mid);}
+.info-callout{background:linear-gradient(135deg,rgba(26,58,42,0.06),rgba(61,122,82,0.06));border-left:4px solid var(--forest-light);border-radius:0 10px 10px 0;padding:16px 20px;margin:16px 0;font-size:14px;color:var(--text-mid);line-height:1.7;}
+.info-callout strong{color:var(--forest);}
+
+/* OPEN-ENDED */
+.oe-section{background:var(--white);border-radius:20px;padding:28px;margin-bottom:20px;border:1px solid var(--cream-mid);box-shadow:0 2px 12px rgba(26,58,42,0.06);}
+.oe-section-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid var(--cream-mid);}
+.oe-section-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.oe-section-title{font-family:Georgia,serif;font-size:22px;color:var(--forest);}
+.oe-section-subtitle{font-size:13px;color:var(--text-light);margin-top:2px;}
+.oe-prompt{font-size:14px;color:var(--text-mid);margin-bottom:8px;line-height:1.6;font-style:italic;}
+.oe-hint{font-size:12px;color:var(--text-light);margin-bottom:12px;font-style:normal;}
+.oe-input-row{display:flex;gap:10px;margin-bottom:12px;}
+.oe-input-row .form-input{flex:1;margin:0;}
+.oe-add-btn{background:var(--forest);color:white;border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background 0.2s;font-family:inherit;}
+.oe-add-btn:hover{background:var(--forest-mid);}
+.oe-items-list{display:flex;flex-direction:column;gap:8px;min-height:8px;}
+.oe-item{display:flex;align-items:center;gap:10px;background:var(--cream);border-radius:10px;padding:10px 14px;border:1px solid var(--cream-mid);animation:fadeUp 0.2s ease;}
+.oe-item-text{flex:1;font-size:14px;color:var(--text-dark);}
+.oe-item-remove{background:none;border:none;color:var(--text-light);cursor:pointer;font-size:16px;padding:2px 6px;border-radius:4px;transition:color 0.2s;line-height:1;}
+.oe-item-remove:hover{color:var(--terra);}
+.oe-count{font-size:12px;color:var(--text-light);margin-top:8px;font-family:monospace;}
+.oe-divider{border:none;border-top:1px solid var(--cream-mid);margin:20px 0;}
+
+/* PLANNING */
+#screen-planning{background:#f0ebe0;}
+.planning-intro{background:var(--forest);color:white;border-radius:16px;padding:28px;margin-bottom:24px;}
+.planning-intro h3{font-family:Georgia,serif;font-size:22px;margin-bottom:10px;}
+.planning-intro p{font-size:14px;color:rgba(255,255,255,0.75);line-height:1.7;}
+
+/* DEADLINE BANNER */
+.deadline-banner{background:rgba(200,90,42,0.1);border:1px solid rgba(200,90,42,0.3);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--terra);font-weight:600;margin-bottom:24px;display:flex;align-items:center;gap:8px;}
+
+/* THANK YOU */
+#screen-thanks{background:var(--forest);align-items:center;justify-content:center;}
+.thanks-content{text-align:center;padding:48px 24px;max-width:600px;animation:fadeUp 0.8s ease both;}
+.thanks-icon{font-size:64px;margin-bottom:24px;}
+.thanks-title{font-family:Georgia,serif;font-size:clamp(32px,6vw,56px);color:var(--gold);margin-bottom:16px;}
+.thanks-body{font-size:17px;color:rgba(255,255,255,0.75);line-height:1.7;margin-bottom:32px;}
+.thanks-note{background:rgba(232,168,56,0.15);border:1px solid rgba(232,168,56,0.3);border-radius:12px;padding:20px 24px;font-size:14px;color:rgba(255,255,255,0.7);line-height:1.7;}
+.thanks-note strong{color:var(--gold-light);}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px);}to{opacity:1;transform:translateY(0);}}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.animate-in{animation:fadeUp 0.5s ease both;}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--forest);color:white;padding:14px 24px;border-radius:50px;font-size:14px;font-weight:500;transition:transform 0.3s ease;z-index:2000;box-shadow:var(--shadow-lg);pointer-events:none;}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+/* RESPONSIVE */
+@media(max-width:640px){
+  .compare-grid,.form-row{grid-template-columns:1fr;}
+  .concept-tab{font-size:12px;padding:10px 8px;}
+  .five-s-grid{grid-template-columns:repeat(3,1fr);}
+  .screen-inner{padding:70px 16px 40px;}
+}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"><div id="progress-fill"></div></div>
+<div id="nav-header">
+  <div class="nav-logo">PIH MCH Gap Analysis</div>
+  <div class="nav-dots" id="nav-dots"></div>
+  <div class="nav-step" id="nav-step-label">Welcome</div>
+</div>
+<div id="toast"></div>
+
+<!-- ===== LANDING ===== -->
+<div class="screen active" id="screen-landing">
+  <div class="landing-bg"></div>
+  <div class="africa-pattern"></div>
+  <div class="landing-content">
+    <div class="landing-initiative">PIH Cross-Site Initiative</div>
+    <h1 class="landing-title">MCH Gap<br><span>Analysis</span><br>Tool</h1>
+    <p class="landing-subtitle">An interactive framework for identifying maternal &amp; child health priorities across PIH sites — built to turn data into decisions.</p>
+    <div class="landing-deadline">📅 Please complete by Wednesday night, March 25, 2026</div>
+    <button class="landing-cta" onclick="goTo('concepts')">Begin</button>
+  </div>
+  <div class="landing-footer">Multi-country systems strengthening</div>
+</div>
+
+<!-- ===== CONCEPTS ===== -->
+<div class="screen" id="screen-concepts">
+  <div class="screen-inner">
+    <div class="screen-header animate-in">
+      <div class="step-label"><div class="step-number">1</div> Foundations</div>
+      <h2 class="screen-title">Understanding Gap Analysis</h2>
+      <p class="screen-desc">Before we collect data, let's align on the conceptual framework. Click through each concept to explore.</p>
+    </div>
+
+    <div class="concept-tabs">
+      <button class="concept-tab active" onclick="switchTab('landscape')">Landscape vs Gap</button>
+      <button class="concept-tab" onclick="switchTab('evidence')">Evidence-Informed</button>
+      <button class="concept-tab" onclick="switchTab('priority')">Priority Matrix</button>
+      <button class="concept-tab" onclick="switchTab('fives')">The 5 S's</button>
+    </div>
+
+    <div class="concept-panel active" id="tab-landscape">
+      <div class="compare-grid">
+        <div class="compare-card landscape">
+          <span class="badge">Landscape Analysis</span>
+          <h3>What Exists?</h3>
+          <p>A broad survey of current programs, policies, actors, and resources. It asks: <em>"Who is doing what, where?"</em></p>
+          <br><p style="font-size:13px;"><strong>Focus:</strong> Descriptive inventory of existing MCH services, funding streams, and stakeholders.</p>
+        </div>
+        <div class="compare-card gap-card">
+          <span class="badge">Gap Analysis</span>
+          <h3>What's Missing?</h3>
+          <p>A targeted assessment comparing what <em>exists</em> to what is <em>needed</em>. It asks: <em>"Where are the critical unmet needs?"</em></p>
+          <br><p style="font-size:13px;"><strong>Focus:</strong> Prescriptive. Identifies specific deficits in quality, coverage, or capacity to set actionable priorities.</p>
+        </div>
+      </div>
+      <div class="info-callout">
+        <strong>Why this matters for PIH — Example:</strong> A landscape analysis tells us there are 12 health facilities in a catchment area. A gap analysis tells us that 9 lack skilled birth attendants and that this gap drives 60% of preventable newborn deaths — and must be the top priority.
+      </div>
+    </div>
+
+    <div class="concept-panel" id="tab-evidence">
+      <div class="card" style="margin-bottom:16px;">
+        <h3 style="font-family:Georgia,serif;font-size:22px;color:var(--forest);margin-bottom:12px;">From Data → Decision → Accountability</h3>
+        <p style="font-size:14px;color:var(--text-mid);line-height:1.8;margin-bottom:16px;">Evidence-informed decision-making means systematically gathering the best available data — quantitative, qualitative, and community knowledge — to set priorities that are <strong>defensible, transparent, and trackable</strong>.</p>
+        <div>
+          <div style="display:flex;align-items:flex-start;gap:16px;padding:14px 0;border-bottom:1px solid var(--cream-mid);"><div style="width:36px;height:36px;border-radius:50%;background:var(--forest);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">1</div><div><strong style="color:var(--forest);">Collect Site Data</strong><br><span style="font-size:13px;color:var(--text-mid);">Structured input across 5 S domains from site directors and MCH staff</span></div></div>
+          <div style="display:flex;align-items:flex-start;gap:16px;padding:14px 0;border-bottom:1px solid var(--cream-mid);"><div style="width:36px;height:36px;border-radius:50%;background:var(--forest-mid);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">2</div><div><strong style="color:var(--forest);">Identify Priority Gaps</strong><br><span style="font-size:13px;color:var(--text-mid);">Use scoring to rank gaps by severity and feasibility of addressing</span></div></div>
+          <div style="display:flex;align-items:flex-start;gap:16px;padding:14px 0;border-bottom:1px solid var(--cream-mid);"><div style="width:36px;height:36px;border-radius:50%;background:var(--gold);color:var(--forest);display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">3</div><div><strong style="color:var(--forest);">Generate Recommendations</strong><br><span style="font-size:13px;color:var(--text-mid);">Site-specific and cross-site recommendations grounded in the gap data</span></div></div>
+          <div style="display:flex;align-items:flex-start;gap:16px;padding:14px 0;border-bottom:1px solid var(--cream-mid);"><div style="width:36px;height:36px;border-radius:50%;background:var(--terra);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">4</div><div><strong style="color:var(--forest);">Implement with Accountability</strong><br><span style="font-size:13px;color:var(--text-mid);">Assign owners, set timelines, track progress against baseline gaps</span></div></div>
+          <div style="display:flex;align-items:flex-start;gap:16px;padding:14px 0;"><div style="width:36px;height:36px;border-radius:50%;background:var(--sky);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">↺</div><div><strong style="color:var(--forest);">Feed Back into PIH Systems</strong><br><span style="font-size:13px;color:var(--text-mid);">Annual re-assessment ensures institutional sustainability and learning</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="concept-panel" id="tab-priority">
+      <p style="font-size:14px;color:var(--text-mid);margin-bottom:16px;line-height:1.7;">The Priority Matrix helps us invest limited resources where they will have the greatest impact. We score gaps on two axes: <strong>Severity</strong> (how critical is it?) and <strong>Feasibility</strong> (can we act on it now?).</p>
+      <div class="priority-matrix">
+        <div class="matrix-grid">
+          <div style="background:var(--cream-mid);border:1px solid rgba(0,0,0,0.08);"></div>
+          <div class="matrix-label" style="background:var(--cream-mid);">⬆ HIGH Feasibility</div>
+          <div class="matrix-label" style="background:var(--cream-mid);">⬇ LOW Feasibility</div>
+          <div class="matrix-axis-y">SEVERITY →</div>
+          <div class="matrix-cell cell-hi-hi"><h5>🔴 ACT NOW</h5><p>High severity + High feasibility = Immediate priority</p></div>
+          <div class="matrix-cell cell-hi-lo"><h5>🟠 PLAN</h5><p>High severity, harder to address — needs strategic planning</p></div>
+          <div class="matrix-cell cell-lo-hi"><h5>🟢 QUICK WIN</h5><p>Easy to address now — builds momentum</p></div>
+          <div class="matrix-cell cell-lo-lo"><h5>⚪ MONITOR</h5><p>Low severity and low feasibility — deprioritize</p></div>
+        </div>
+      </div>
+      <div class="info-callout"><strong>Example:</strong> EmOC is critically understaffed (high severity) AND the Ministry has a nurse redeployment program available (high feasibility) → <strong>Act Now.</strong></div>
+    </div>
+
+    <div class="concept-panel" id="tab-fives">
+      <p style="font-size:14px;color:var(--text-mid);margin-bottom:20px;line-height:1.7;">The 5 S's provide a structured lens for assessing what a health system needs to function. Click each to explore.</p>
+      <div class="five-s-grid">
+        <div class="s-card" data-s="Staff" onclick="showSDetail('Staff')"><span class="s-icon">👩‍⚕️</span><div class="s-name">Staff</div><div class="s-desc">Human resources for health</div></div>
+        <div class="s-card" data-s="Stuff" onclick="showSDetail('Stuff')"><span class="s-icon">💊</span><div class="s-name">Stuff</div><div class="s-desc">Medicines, equipment &amp; supplies</div></div>
+        <div class="s-card" data-s="Space" onclick="showSDetail('Space')"><span class="s-icon">🏥</span><div class="s-name">Space</div><div class="s-desc">Physical infrastructure</div></div>
+        <div class="s-card" data-s="Systems" onclick="showSDetail('Systems')"><span class="s-icon">⚙️</span><div class="s-name">Systems</div><div class="s-desc">Processes, data &amp; governance</div></div>
+        <div class="s-card" data-s="Social" onclick="showSDetail('Social')"><span class="s-icon">🤝</span><div class="s-name">Social Support</div><div class="s-desc">Community &amp; demand-side</div></div>
+      </div>
+      <div class="s-detail" id="s-detail-box"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo('landing')">← Back</button>
+      <button class="btn btn-primary" onclick="goTo('consent')">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CONSENT ===== -->
+<div class="screen" id="screen-consent">
+  <div class="screen-inner">
+    <div class="screen-header animate-in">
+      <div class="step-label"><div class="step-number">2</div> Consent</div>
+      <h2 class="screen-title">Before We Begin</h2>
+      <p class="screen-desc">We'd like to ask for your consent and a few details before you start the survey.</p>
+    </div>
+
+    <div class="consent-box">
+      <h3>Your information</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Full Name <span class="required">*</span></label>
+          <input class="form-input" id="consent-name" placeholder="Your full name" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address <span class="required">*</span></label>
+          <input class="form-input" id="consent-email" type="email" placeholder="your@email.org" />
+        </div>
+      </div>
+    </div>
+
+    <div class="consent-box">
+      <h3>Research consent</h3>
+      <div class="consent-anon">
+        <strong>Your data will be kept anonymous.</strong> Your name and email are only used to follow up with you directly if needed. In any research output — publications, reports, or studies — your responses will be presented in aggregate and never attributed to you personally.
+      </div>
+      <p class="consent-question">Do you consent to your anonymized responses being used for research purposes beyond this group?</p>
+      <div class="radio-group">
+        <label class="radio-option" id="opt-yes">
+          <input type="radio" name="research-consent" value="yes" onclick="selectConsent('yes')" />
+          <span class="radio-label"><strong>Yes</strong> — my anonymized data can be used for research purposes, including future publications or studies.</span>
+        </label>
+        <label class="radio-option" id="opt-no">
+          <input type="radio" name="research-consent" value="no" onclick="selectConsent('no')" />
+          <span class="radio-label"><strong>No</strong> — please remove my answers from any research beyond this group. I am still happy to participate in the survey.</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo('concepts')">← Back</button>
+      <button class="btn btn-primary" onclick="proceedFromConsent()">Continue →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SITE PROFILE + OPEN-ENDED ===== -->
+<div class="screen" id="screen-site">
+  <div class="screen-inner">
+    <div class="screen-header animate-in">
+      <div class="step-label"><div class="step-number">3</div> Site Profile &amp; Gaps</div>
+      <h2 class="screen-title">About Your Site &amp; Its Gaps</h2>
+      <p class="screen-desc">Tell us about your site, then share what you see as the key gaps in each of the 5 S categories — in your own words.</p>
+    </div>
+
+    <div class="deadline-banner">📅 Please complete this survey by Wednesday night, March 25, 2026</div>
+
+    <div class="card" style="margin-bottom:20px;">
+      <h3 style="font-family:Georgia,serif;font-size:18px;color:var(--forest);margin-bottom:20px;">Site Information</h3>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Country <span class="required">*</span></label>
+          <select class="form-select" id="site-country" onchange="toggleOther('site-country','country-other')">
+            <option value="">Select country...</option>
+            <option>Haiti</option>
+            <option>Kazakhstan</option>
+            <option>Lesotho</option>
+            <option>Liberia</option>
+            <option>Malawi</option>
+            <option>Mexico</option>
+            <option>Peru</option>
+            <option>Rwanda</option>
+            <option>Sierra Leone</option>
+            <option>Other</option>
+          </select>
+          <div class="other-wrap" id="country-other">
+            <input class="form-input" id="country-other-input" placeholder="Please specify country..." />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Site Name <span class="required">*</span></label>
+          <input class="form-input" id="site-name" placeholder="e.g., Butaro District Hospital" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Your Role <span class="required">*</span></label>
+          <select class="form-select" id="user-role" onchange="toggleOther('user-role','role-other')">
+            <option value="">Select role...</option>
+            <option>Nurse</option>
+            <option>Midwife</option>
+            <option>Community Health Worker / Supervisor</option>
+            <option>Clinical Officer</option>
+            <option>MCH Program Manager</option>
+            <option>Quality Improvement Officer</option>
+            <option>Data / M&amp;E Officer</option>
+            <option>Site Director / Country Director</option>
+            <option>Physician / Medical Officer</option>
+            <option>HQ / Global Programs Staff</option>
+            <option>Other</option>
+          </select>
+          <div class="other-wrap" id="role-other">
+            <input class="form-input" id="role-other-input" placeholder="Please specify role..." />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Facility Level</label>
+          <select class="form-select" id="facility-level" onchange="toggleOther('facility-level','level-other')">
+            <option value="">Select type...</option>
+            <option>National Referral Hospital</option>
+            <option>District Hospital</option>
+            <option>Health Centre</option>
+            <option>Birthing Centre</option>
+            <option>Community Health Post</option>
+            <option>Multiple / Network</option>
+            <option>Other</option>
+          </select>
+          <div class="other-wrap" id="level-other">
+            <input class="form-input" id="level-other-input" placeholder="Please specify facility type..." />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Facility Designation</label>
+          <select class="form-select" id="facility-designation" onchange="toggleOther('facility-designation','designation-other')">
+            <option value="">Select designation...</option>
+            <option>BEmONC</option>
+            <option>CEmONC</option>
+            <option>BHU</option>
+            <option>Other</option>
+          </select>
+          <div class="other-wrap" id="designation-other">
+            <input class="form-input" id="designation-other-input" placeholder="Please specify designation..." />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Annual Deliveries (approx.)</label>
+          <select class="form-select" id="delivery-volume">
+            <option value="">Select range...</option>
+            <option>&lt;500</option>
+            <option>501-2,500</option>
+            <option>2,501-5,000</option>
+            <option>&gt;5,000</option>
+            <option>Unknown</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Setting</label>
+          <select class="form-select" id="setting">
+            <option value="">Select...</option>
+            <option>Rural</option>
+            <option>Peri-urban</option>
+            <option>Urban</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="oe-sections-container"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo('consent')">← Back</button>
+      <button class="btn btn-primary" onclick="goTo('planning')">Continue to Planning →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PLANNING ===== -->
+<div class="screen" id="screen-planning">
+  <div class="screen-inner">
+    <div class="screen-header animate-in">
+      <div class="step-label"><div class="step-number">4</div> Planning</div>
+      <h2 class="screen-title">Planning the Gap Analysis</h2>
+      <p class="screen-desc">This workshop is the beginning. Now let's think together about <em>how</em> the full gap analysis should happen later this year.</p>
+    </div>
+
+    <div class="planning-intro">
+      <h3>Your input shapes the methodology</h3>
+      <p>Share your honest thinking on the questions below — there are no wrong answers. Your responses will inform how PIH structures and conducts the full gap analysis process.</p>
+    </div>
+
+    <!-- Ownership & Roles -->
+    <div class="oe-section">
+      <div class="oe-section-header">
+        <div class="oe-section-icon" style="background:rgba(200,90,42,0.1);color:var(--terra);">👥</div>
+        <div><div class="oe-section-title">Ownership &amp; Roles</div><div class="oe-section-subtitle">Who should lead and participate?</div></div>
+      </div>
+      <p class="oe-prompt">Who at your site should own the gap analysis process?</p>
+      <p class="oe-hint">Consider: Leader, facilitator, timekeeper, note taker</p>
+      <div class="oe-input-row">
+        <input class="form-input" id="plan-ownership-input" placeholder="Type your response and click Add..." />
+        <button class="oe-add-btn" onclick="addPlanItem('ownership')">+ Add</button>
+      </div>
+      <div class="oe-items-list" id="plan-ownership-list"></div>
+      <div class="oe-count" id="plan-ownership-count"></div>
+      <hr class="oe-divider">
+      <p class="oe-prompt">Who needs to be at the table — and who is often left out?</p>
+      <p class="oe-hint">Consider: M&amp;E, Nursing Leadership, MCH/hospital leadership, Operations, etc.</p>
+      <div class="oe-input-row">
+        <input class="form-input" id="plan-ownership2-input" placeholder="Type your response and click Add..." />
+        <button class="oe-add-btn" onclick="addPlanItem('ownership2')">+ Add</button>
+      </div>
+      <div class="oe-items-list" id="plan-ownership2-list"></div>
+      <div class="oe-count" id="plan-ownership2-count"></div>
+    </div>
+
+    <!-- Timing & Cadence -->
+    <div class="oe-section">
+      <div class="oe-section-header">
+        <div class="oe-section-icon" style="background:rgba(26,58,42,0.1);color:var(--forest);">🗓️</div>
+        <div><div class="oe-section-title">Timing &amp; Cadence</div><div class="oe-section-subtitle">When and how often should the gap analysis meeting happen?</div></div>
+      </div>
+      <p class="oe-prompt">What would be the ideal timing for conducting the full gap analysis meeting at your site? Consider: weekly, bi-weekly, monthly, bi-monthly, something else. Add other thoughts related to timing and cadence.</p>
+      <div class="oe-input-row">
+        <input class="form-input" id="plan-timing-input" placeholder="Type your response and click Add..." />
+        <button class="oe-add-btn" onclick="addPlanItem('timing')">+ Add</button>
+      </div>
+      <div class="oe-items-list" id="plan-timing-list"></div>
+      <div class="oe-count" id="plan-timing-count"></div>
+    </div>
+
+    <!-- Data Sources -->
+    <div class="oe-section">
+      <div class="oe-section-header">
+        <div class="oe-section-icon" style="background:rgba(74,158,200,0.1);color:var(--sky);">📊</div>
+        <div><div class="oe-section-title">Data Sources</div><div class="oe-section-subtitle">What data should feed the analysis?</div></div>
+      </div>
+      <p class="oe-prompt">What data sources exist at your site that should inform the gap analysis? What data is missing that you wish you had?</p>
+      <div class="oe-input-row">
+        <input class="form-input" id="plan-data-input" placeholder="Type your response and click Add..." />
+        <button class="oe-add-btn" onclick="addPlanItem('data')">+ Add</button>
+      </div>
+      <div class="oe-items-list" id="plan-data-list"></div>
+      <div class="oe-count" id="plan-data-count"></div>
+    </div>
+
+    <!-- Barriers -->
+    <div class="oe-section">
+      <div class="oe-section-header">
+        <div class="oe-section-icon" style="background:rgba(200,58,58,0.1);color:#c83a3a;">🚧</div>
+        <div><div class="oe-section-title">Barriers</div><div class="oe-section-subtitle">What could get in the way?</div></div>
+      </div>
+      <p class="oe-prompt">What are the biggest barriers to conducting a meaningful gap analysis at your site?</p>
+      <div class="oe-input-row">
+        <input class="form-input" id="plan-barriers-input" placeholder="Type your response and click Add..." />
+        <button class="oe-add-btn" onclick="addPlanItem('barriers')">+ Add</button>
+      </div>
+      <div class="oe-items-list" id="plan-barriers-list"></div>
+      <div class="oe-count" id="plan-barriers-count"></div>
+    </div>
+
+    <!-- Enablers -->
+    <div class="oe-section">
+      <div class="oe-section-header">
+        <div class="oe-section-icon" style="background:rgba(46,125,50,0.1);color:#2e7d32;">✅</div>
+        <div><div class="oe-section-title">Enablers</div><div class="oe-section-subtitle">What conditions would make it succeed?</div></div>
+      </div>
+      <p class="oe-prompt">What conditions, resources, or relationships at your site would make the gap analysis succeed?</p>
+      <div class="oe-input-row">
+        <input class="form-input" id="plan-enablers-input" placeholder="Type your response and click Add..." />
+        <button class="oe-add-btn" onclick="addPlanItem('enablers')">+ Add</button>
+      </div>
+      <div class="oe-items-list" id="plan-enablers-list"></div>
+      <div class="oe-count" id="plan-enablers-count"></div>
+    </div>
+
+    <!-- Anything else -->
+    <div class="oe-section">
+      <div class="oe-section-header">
+        <div class="oe-section-icon" style="background:rgba(184,134,11,0.1);color:var(--gold);">🌍</div>
+        <div><div class="oe-section-title">Anything Else?</div><div class="oe-section-subtitle">Other thoughts on making this work across PIH sites</div></div>
+      </div>
+      <p class="oe-prompt">Is there anything else you want PIH leadership to know as they plan the gap analysis initiative?</p>
+      <div class="oe-input-row">
+        <input class="form-input" id="plan-other-input" placeholder="Type your response and click Add..." />
+        <button class="oe-add-btn" onclick="addPlanItem('other')">+ Add</button>
+      </div>
+      <div class="oe-items-list" id="plan-other-list"></div>
+      <div class="oe-count" id="plan-other-count"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="goTo('site')">← Back</button>
+      <button class="btn btn-gold" onclick="submitSurvey()">Submit Survey →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== THANK YOU ===== -->
+<div class="screen" id="screen-thanks">
+  <div class="thanks-content" style="max-width:700px;width:100%;">
+    <div class="thanks-icon">🌍</div>
+    <h2 class="thanks-title">Thank You</h2>
+    <p class="thanks-body">Your responses have been recorded. Every perspective from across PIH sites makes this initiative stronger.</p>
+    <div class="thanks-note" style="margin-bottom:32px;">
+      <strong>What happens next?</strong><br><br>
+      We will analyze responses across all sites and discuss the results together soon. Your input will directly shape how PIH designs and runs its cross-site MCH gap analysis later this year.
+    </div>
+    <div style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:16px;padding:28px;text-align:left;margin-bottom:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+        <h3 style="font-family:Georgia,serif;font-size:18px;color:var(--gold-light);">Your Response Summary</h3>
+        <button onclick="copyResponses()" style="background:var(--gold);color:var(--forest);border:none;border-radius:50px;padding:10px 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Copy All Responses</button>
+      </div>
+      <div id="thanks-summary" style="font-size:13px;color:rgba(255,255,255,0.75);line-height:1.9;white-space:pre-wrap;font-family:monospace;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+var state = {
+  currentScreen: 'landing',
+  consentName: '', consentEmail: '', consentResearch: '',
+  openEndedResponses: { Staff: [], Stuff: [], Space: [], Systems: [], Social: [] },
+  planningResponses: { ownership: [], ownership2: [], timing: [], data: [], barriers: [], enablers: [], other: [] }
+};
+
+var screenOrder = ['landing','concepts','consent','site','planning','thanks'];
+var screenLabels = { landing:'Welcome', concepts:'Concepts', consent:'Consent', site:'Site & Gaps', planning:'Planning', thanks:'Complete' };
+
+// ===== 5S CONFIG =====
+var sConfig = {
+  Staff:   { icon:'👩‍⚕️', color:'#1a3a2a', bg:'rgba(26,58,42,0.1)',   prompt:'What gaps do you see in human resources for MCH at your site? Think about staffing, skills, training, CHWs, retention, etc.' },
+  Stuff:   { icon:'💊',   color:'#c85a2a', bg:'rgba(200,90,42,0.1)',  prompt:'What gaps do you see in medicines, equipment, and supplies for MCH? Think about stockouts, broken equipment, missing diagnostics, etc.' },
+  Space:   { icon:'🏥',   color:'#4a9ec8', bg:'rgba(74,158,200,0.1)', prompt:'What gaps do you see in physical infrastructure for MCH? Think about delivery rooms, theatres, neonatal spaces, water/electricity, handwashing stations, sterilization, etc.' },
+  Systems: { icon:'⚙️',   color:'#7c3d8a', bg:'rgba(124,61,138,0.1)', prompt:'What gaps do you see in systems and processes for MCH? Think about protocols, data, maternal and neonatal morbidity and mortality, EMR/documentation, near misses, QI, referral systems, etc.' },
+  Social:  { icon:'🤝',   color:'#b8860b', bg:'rgba(184,134,11,0.1)', prompt:'What gaps do you see in social and community support for MCH? Think about ANC uptake, barriers to care, CHW reach, nutrition, etc.' }
+};
+
+var sDetailContent = {
+  Staff:   { desc:'Human resources — who is providing care. Includes numbers, skills, training, deployment, retention, and supervision of all cadres involved in MCH service delivery.', examples:['Midwives & skilled birth attendants','Obstetricians & neonatologists','Obstetric nurses','Community health workers','Training & supervision staff'] },
+  Stuff:   { desc:'Medicines, equipment, and supplies — what is used to provide care. Includes essential drugs, diagnostic tools, surgical equipment, and supply chain reliability.', examples:['Oxytocin, MgSO4, antibiotics','Neonatal resus equipment','Blood products & cold chain','Ultrasound & diagnostics','PPE & sterile supplies'] },
+  Space:   { desc:'Physical infrastructure — where care is provided. Includes facility design, operating capacity, utilities, and referral transport.', examples:['Labour & delivery rooms','Emergency obstetric theatre','NICU / KMC unit','Water, electricity & oxygen','Handwashing stations & sterilization'] },
+  Systems: { desc:'Processes and governance — how care is organized. Includes clinical protocols, health information systems, quality improvement, and accountability structures.', examples:['Clinical protocols & SOPs','EMR/documentation systems','Maternal & neonatal morbidity/mortality review','Near miss reporting','QI cycles & referral systems'] },
+  Social:  { desc:'Community and demand-side factors — who seeks care and why. Includes health-seeking behaviour, community support, nutrition, and access barriers.', examples:['ANC attendance patterns','Facility delivery rates','CHW networks','Transport & geographic access','Nutrition support'] }
+};
+
+// ===== NAVIGATION =====
+function goTo(screenName) {
+  flushUnsubmittedInputs();
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  var el = document.getElementById('screen-' + screenName);
+  if (el) el.classList.add('active');
+  state.currentScreen = screenName;
+  updateProgress();
+  window.scrollTo({top:0,behavior:'smooth'});
+  if (screenName === 'thanks') renderThanksSummary();
+}
+
+function updateProgress() {
+  try {
+    var idx = screenOrder.indexOf(state.currentScreen);
+    if (idx < 0) idx = 0;
+    var pct = (idx / (screenOrder.length - 1)) * 100;
+    var fill = document.getElementById('progress-fill');
+    if (fill) fill.style.width = pct + '%';
+    var dotsEl = document.getElementById('nav-dots');
+    if (dotsEl) {
+      dotsEl.innerHTML = '';
+      screenOrder.forEach(function(s, i) {
+        var d = document.createElement('div');
+        d.className = 'nav-dot' + (i < idx ? ' done' : '') + (i === idx ? ' active' : '');
+        dotsEl.appendChild(d);
+      });
+    }
+    var lbl = document.getElementById('nav-step-label');
+    if (lbl) lbl.textContent = screenLabels[state.currentScreen] || '';
+    var nav = document.getElementById('nav-header');
+    if (nav) nav.classList.toggle('visible', state.currentScreen !== 'landing');
+  } catch(e){ console.warn(e); }
+}
+
+// ===== FLUSH UNSUBMITTED =====
+function flushUnsubmittedInputs() {
+  Object.keys(sConfig).forEach(function(sName) {
+    var inp = document.getElementById('oe-input-' + sName);
+    if (inp && inp.value.trim()) addOEItem(sName);
+  });
+  Object.keys(state.planningResponses).forEach(function(cat) {
+    var inp = document.getElementById('plan-' + cat + '-input');
+    if (inp && inp.value.trim()) addPlanItem(cat);
+  });
+}
+
+// ===== TABS =====
+function switchTab(id) {
+  var panels = ['landscape','evidence','priority','fives'];
+  document.querySelectorAll('.concept-tab').forEach(function(t,i){ t.classList.toggle('active', panels[i]===id); });
+  document.querySelectorAll('.concept-panel').forEach(function(p){ p.classList.remove('active'); });
+  var p = document.getElementById('tab-' + id);
+  if (p) p.classList.add('active');
+}
+
+function showSDetail(s) {
+  document.querySelectorAll('.s-card').forEach(function(c){ c.style.opacity = c.dataset.s===s ? '1' : '0.7'; });
+  var box = document.getElementById('s-detail-box');
+  var d = sDetailContent[s];
+  box.innerHTML = '<h4>' + (s==='Social'?'Social Support':s) + '</h4><p>' + d.desc + '</p><div class="s-examples">' + d.examples.map(function(e){ return '<span class="s-example-tag">'+e+'</span>'; }).join('') + '</div>';
+  box.classList.add('active');
+}
+
+// ===== CONSENT =====
+function selectConsent(val) {
+  state.consentResearch = val;
+  document.getElementById('opt-yes').classList.toggle('selected', val==='yes');
+  document.getElementById('opt-no').classList.toggle('selected', val==='no');
+}
+
+function proceedFromConsent() {
+  var name = document.getElementById('consent-name').value.trim();
+  var email = document.getElementById('consent-email').value.trim();
+  if (!name) { showToast('Please enter your full name'); return; }
+  if (!email || email.indexOf('@') < 0) { showToast('Please enter a valid email address'); return; }
+  if (!state.consentResearch) { showToast('Please select a consent option'); return; }
+  state.consentName = name;
+  state.consentEmail = email;
+  buildOESections();
+  goTo('site');
+}
+
+// ===== OTHER DROPDOWNS =====
+function toggleOther(selectId, wrapId) {
+  var sel = document.getElementById(selectId);
+  var wrap = document.getElementById(wrapId);
+  if (sel && wrap) wrap.classList.toggle('visible', sel.value==='Other');
+}
+
+function getFieldValue(selectId, otherWrapperId, otherInputId) {
+  var sel = document.getElementById(selectId);
+  if (!sel) return '';
+  if (sel.value === 'Other') {
+    var inp = document.getElementById(otherInputId);
+    return inp ? (inp.value.trim() || 'Other') : 'Other';
+  }
+  return sel.value;
+}
+
+// ===== BUILD 5S SECTIONS =====
+function buildOESections() {
+  var container = document.getElementById('oe-sections-container');
+  if (!container) return;
+  container.innerHTML = '';
+  Object.keys(sConfig).forEach(function(sName) {
+    var cfg = sConfig[sName];
+    var label = sName==='Social' ? 'Social Support' : sName;
+    var div = document.createElement('div');
+    div.className = 'oe-section';
+    div.innerHTML =
+      '<div class="oe-section-header">' +
+        '<div class="oe-section-icon" style="background:'+cfg.bg+';color:'+cfg.color+'">'+cfg.icon+'</div>' +
+        '<div><div class="oe-section-title">'+label+'</div><div class="oe-section-subtitle">Identify gaps in '+label.toLowerCase()+' at your site</div></div>' +
+      '</div>' +
+      '<p class="oe-prompt">'+cfg.prompt+'</p>' +
+      '<div class="oe-input-row">' +
+        '<input class="form-input" id="oe-input-'+sName+'" placeholder="Describe a gap and click Add..." />' +
+        '<button class="oe-add-btn" onclick="addOEItem(\''+sName+'\')">+ Add</button>' +
+      '</div>' +
+      '<div class="oe-items-list" id="oe-list-'+sName+'"></div>' +
+      '<div class="oe-count" id="oe-count-'+sName+'"></div>';
+    container.appendChild(div);
+    var inp = div.querySelector('#oe-input-' + sName);
+    inp.addEventListener('keydown', function(e){ if(e.key==='Enter') addOEItem(sName); });
+  });
+}
+
+function addOEItem(sName) {
+  var inp = document.getElementById('oe-input-' + sName);
+  if (!inp) return;
+  var val = inp.value.trim();
+  if (!val) return;
+  state.openEndedResponses[sName].push(val);
+  inp.value = '';
+  renderOEList(sName);
+  inp.focus();
+}
+
+function removeOEItem(sName, idx) {
+  state.openEndedResponses[sName].splice(idx, 1);
+  renderOEList(sName);
+}
+
+function renderOEList(sName) {
+  var list = document.getElementById('oe-list-' + sName);
+  var count = document.getElementById('oe-count-' + sName);
+  var items = state.openEndedResponses[sName];
+  if (list) list.innerHTML = items.map(function(item,i){
+    return '<div class="oe-item"><span class="oe-item-text">'+escapeHtml(item)+'</span><button class="oe-item-remove" onclick="removeOEItem(\''+sName+'\','+i+')" title="Remove">×</button></div>';
+  }).join('');
+  if (count) count.textContent = items.length > 0 ? items.length + ' item' + (items.length>1?'s':'') + ' added' : '';
+}
+
+// ===== PLANNING ITEMS =====
+function addPlanItem(cat) {
+  var inp = document.getElementById('plan-' + cat + '-input');
+  if (!inp) return;
+  var val = inp.value.trim();
+  if (!val) return;
+  state.planningResponses[cat].push(val);
+  inp.value = '';
+  renderPlanList(cat);
+  inp.focus();
+}
+
+function removePlanItem(cat, idx) {
+  state.planningResponses[cat].splice(idx, 1);
+  renderPlanList(cat);
+}
+
+function renderPlanList(cat) {
+  var list = document.getElementById('plan-' + cat + '-list');
+  var count = document.getElementById('plan-' + cat + '-count');
+  var items = state.planningResponses[cat];
+  if (list) list.innerHTML = items.map(function(item,i){
+    return '<div class="oe-item"><span class="oe-item-text">'+escapeHtml(item)+'</span><button class="oe-item-remove" onclick="removePlanItem(\''+cat+'\','+i+')" title="Remove">×</button></div>';
+  }).join('');
+  if (count) count.textContent = items.length > 0 ? items.length + ' item' + (items.length>1?'s':'') + ' added' : '';
+}
+
+// ===== SUBMIT =====
+var SHEET_URL = 'https://script.google.com/macros/s/AKfycbw1ZlRFMZkgFVGfWgb6qLTvy24PYBQNPwffGv8eHKnp3JULE94EwJb1FqFL7wHPOp9ClA/exec';
+
+function submitSurvey() {
+  flushUnsubmittedInputs();
+  var site = document.getElementById('site-name') ? document.getElementById('site-name').value.trim() : '';
+  var country = getFieldValue('site-country', 'country-other', 'country-other-input');
+  var role = getFieldValue('user-role', 'role-other', 'role-other-input');
+  var facilityLevel = getFieldValue('facility-level', 'level-other', 'level-other-input');
+  var designation = getFieldValue('facility-designation', 'designation-other', 'designation-other-input');
+  var deliveryVol = document.getElementById('delivery-volume') ? document.getElementById('delivery-volume').value : '';
+  var setting = document.getElementById('setting') ? document.getElementById('setting').value : '';
+
+  if (!country) { showToast('Please select a country before submitting'); return; }
+  if (!site) { showToast('Please enter your site name before submitting'); return; }
+  if (!role) { showToast('Please select your role before submitting'); return; }
+
+  var payload = {
+    timestamp: new Date().toISOString(),
+    name: state.consentName,
+    email: state.consentEmail,
+    consent_research: state.consentResearch,
+    country: country,
+    site_name: site,
+    role: role,
+    facility_level: facilityLevel,
+    facility_designation: designation,
+    delivery_volume: deliveryVol,
+    setting: setting,
+    gap_staff:   state.openEndedResponses.Staff.join(' | '),
+    gap_stuff:   state.openEndedResponses.Stuff.join(' | '),
+    gap_space:   state.openEndedResponses.Space.join(' | '),
+    gap_systems: state.openEndedResponses.Systems.join(' | '),
+    gap_social:  state.openEndedResponses.Social.join(' | '),
+    plan_ownership:  state.planningResponses.ownership.join(' | '),
+    plan_ownership2: state.planningResponses.ownership2.join(' | '),
+    plan_timing:     state.planningResponses.timing.join(' | '),
+    plan_data:       state.planningResponses.data.join(' | '),
+    plan_barriers:   state.planningResponses.barriers.join(' | '),
+    plan_enablers:   state.planningResponses.enablers.join(' | '),
+    plan_other:      state.planningResponses.other.join(' | ')
+  };
+
+  // Show submitting state
+  var submitBtn = document.querySelector('#screen-planning .btn-gold');
+  if (submitBtn) { submitBtn.textContent = 'Submitting...'; submitBtn.disabled = true; }
+
+  fetch(SHEET_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(function() {
+    // no-cors means we can't read the response, but if we get here it sent
+    goTo('thanks');
+  })
+  .catch(function(err) {
+    console.error('Submission error:', err);
+    if (submitBtn) { submitBtn.textContent = 'Submit Survey →'; submitBtn.disabled = false; }
+    showToast('Submission failed — please check your connection and try again');
+  });
+}
+
+// ===== UTILS =====
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 3000);
+}
+
+// ===== THANK YOU SUMMARY =====
+function renderThanksSummary() {
+  var lines = [];
+  lines.push('PIH MCH Gap Analysis — Response Summary');
+  lines.push('Date: ' + new Date().toLocaleString());
+  lines.push('');
+  lines.push('--- ABOUT YOU ---');
+  lines.push('Name: ' + state.consentName);
+  lines.push('Email: ' + state.consentEmail);
+  lines.push('Research consent: ' + (state.consentResearch === 'yes' ? 'Yes' : 'No'));
+  lines.push('');
+  lines.push('--- SITE INFORMATION ---');
+  var country = getFieldValue('site-country','country-other','country-other-input');
+  var site = document.getElementById('site-name') ? document.getElementById('site-name').value.trim() : '';
+  var role = getFieldValue('user-role','role-other','role-other-input');
+  var level = getFieldValue('facility-level','level-other','level-other-input');
+  var desig = getFieldValue('facility-designation','designation-other','designation-other-input');
+  var vol = document.getElementById('delivery-volume') ? document.getElementById('delivery-volume').value : '';
+  var setting = document.getElementById('setting') ? document.getElementById('setting').value : '';
+  lines.push('Country: ' + (country || '—'));
+  lines.push('Site: ' + (site || '—'));
+  lines.push('Role: ' + (role || '—'));
+  lines.push('Facility Level: ' + (level || '—'));
+  lines.push('Facility Designation: ' + (desig || '—'));
+  lines.push('Annual Deliveries: ' + (vol || '—'));
+  lines.push('Setting: ' + (setting || '—'));
+  lines.push('');
+  lines.push('--- 5S GAP RESPONSES ---');
+  var sLabels = { Staff:'Staff', Stuff:'Stuff', Space:'Space', Systems:'Systems', Social:'Social Support' };
+  Object.keys(sConfig).forEach(function(s) {
+    var items = state.openEndedResponses[s];
+    lines.push(sLabels[s] + ': ' + (items.length > 0 ? items.join(' | ') : '(no response)'));
+  });
+  lines.push('');
+  lines.push('--- PLANNING RESPONSES ---');
+  var planLabels = { ownership:'Ownership (who owns it)', ownership2:'Who needs to be at the table', timing:'Timing & Cadence', data:'Data Sources', barriers:'Barriers', enablers:'Enablers', other:'Anything Else' };
+  Object.keys(state.planningResponses).forEach(function(cat) {
+    var items = state.planningResponses[cat];
+    lines.push(planLabels[cat] + ': ' + (items.length > 0 ? items.join(' | ') : '(no response)'));
+  });
+  var summary = lines.join('\n');
+  var el = document.getElementById('thanks-summary');
+  if (el) el.textContent = summary;
+}
+
+function copyResponses() {
+  var el = document.getElementById('thanks-summary');
+  if (!el) return;
+  var text = el.textContent;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function(){ showToast('Responses copied to clipboard!'); });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Responses copied to clipboard!');
+  }
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', function() {
+  ['ownership','ownership2','timing','data','barriers','enablers','other'].forEach(function(cat){
+    var inp = document.getElementById('plan-' + cat + '-input');
+    if (inp) inp.addEventListener('keydown', function(e){ if(e.key==='Enter') addPlanItem(cat); });
+  });
+  updateProgress();
+});
+</script>
+</body>
+</html>
